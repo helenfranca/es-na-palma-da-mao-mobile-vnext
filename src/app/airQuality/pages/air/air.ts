@@ -29,19 +29,15 @@ export class AirPage {
     private loadingService: LoadingService,
     private geolocation: Geolocation,
     ) {
+      this.geoLocation();
       this.loading = this.loadingService.show('Carregando mapa');
-
-      this.geolocation.getCurrentPosition().then((resp) => {
-        this.latitude = resp.coords.latitude;
-        this.longitude = resp.coords.longitude;
-       }).catch((error) => {
-         console.log('Error getting location', error);
-       });
  
   }
 
+
   ionViewDidLoad(){
     this.allDataQualityAir();
+    
   }
   /**
    * puxa todos os dados 
@@ -50,8 +46,8 @@ export class AirPage {
     
     this.service.getAllQualityAir().subscribe(dados => {
       this.Air = dados;
-      this.loadMapa();
-      
+      this.loadMapa();     
+
     });
   } 
   
@@ -66,42 +62,51 @@ export class AirPage {
     }).addTo(map);
 
     this.pin(map);
+    this.pinPeople(map);
     this.loading.dismiss();
     this.loadMap = true;
-
-   
   }
+
+  geoLocation(){
+    this.geolocation.getCurrentPosition().then((resp) => {
+      this.latitude = resp.coords.latitude.toFixed(4);
+      this.longitude = resp.coords.longitude.toFixed(4);
+
+     }).catch((error) => {
+       console.log('Error getting location', error);
+     });
+  }
+
 
   /**
    * 
    */
   pin(map){
     this.Air.map(item =>{
-      if (item.Faixa != null && item.Valor != 0){
+      if (item.Faixa != null && item.Valor !== 0){
         let pinIcon = leaflet.divIcon({
           className: "number-icon",
           iconSize: [48, 60],
           html: "<div class=\"faixa\" style=\"background-color: " + item.Cor + "\">" + item.Iqa.toFixed(0) +"</div>"});
-  
-        let mark = leaflet.marker([item.Latitude,item.Longitude], {icon: pinIcon});
+        let mark = leaflet.marker([item.Latitude, item.Longitude], {icon: pinIcon});
         map.addLayer(mark);
         mark.on('click', () => {
           // abrir modal com as informações
                  
           this.modal(item.IdEstacao, this.Air.find( a => a.IdEstacao === item.IdEstacao));
-
         });
-      } 
-  
+        
+      }
+     
     });
+  }
 
-    var pessoa = leaflet.icon({
+  pinPeople(map){
+    let pessoa = leaflet.icon({
       iconUrl: '../assets/css/images/personinmap.png', 
       iconSize: [40, 40]
     });
-
     leaflet.marker([this.latitude, this.longitude], {icon: pessoa}).addTo(map).bindPopup('Você está aqui!');
-    
   }
 
   modal(id, Air){
